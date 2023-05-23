@@ -8,4 +8,9 @@ It features a main view to list and preview photos that have been taken with the
 
 The *Open Camera* button starts a second activity that captures and saves such photos.
 
-[img/Screenshot_20230523_174700.png](img/Screenshot_20230523_174700.png)
+![App Screenshot: MainActivity](img/Screenshot_20230523_174700.png)
+
+## Resources
+
+* [https://medium.com/swlh/introduction-to-androids-camerax-with-java-ca384c522c5](https://medium.com/swlh/introduction-to-androids-camerax-with-java-ca384c522c5)
+* and largely on ChatGPT for saving the pictures
