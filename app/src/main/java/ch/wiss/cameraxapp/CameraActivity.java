@@ -57,43 +57,55 @@ public class CameraActivity extends AppCompatActivity {
 
     }
 
-    public void btnSavePressed(View view) throws ExecutionException, InterruptedException {
-
-        String fileName = "my_photo_"+ LocalDateTime.now().toString()
-                .replace(":","")
-                .replace(".","")+".jpg";
+    public void btnSavePressed(View view) {
+        String fileName = "my_photo_" + LocalDateTime.now().toString()
+                .replace(":", "")
+                .replace(".", "") + ".jpg";
         File photoFile = new File(getExternalMediaDirs()[0], fileName);
-        Log.d("Sven-CAM", "going to save image: "+photoFile.getAbsolutePath());
+        Log.d("Sven-CAM", "going to save image: " + photoFile.getAbsolutePath());
 
-        ProcessCameraProvider cameraProvider = ProcessCameraProvider.getInstance(this).get();
+        try {
+            ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
 
-        Preview preview = new Preview.Builder().build();
+            // Überprüfe, ob die Kamera bereits gebunden ist, und entferne sie, bevor wir neue Use Cases hinzufügen
+            cameraProvider.unbindAll();
 
-        preview.setSurfaceProvider(previewView.getSurfaceProvider());
+            Preview preview = new Preview.Builder().build();
+            preview.setSurfaceProvider(previewView.getSurfaceProvider());
 
+            ImageCapture imageCapture = new ImageCapture.Builder().build();
 
-        ImageCapture imageCapture = new ImageCapture.Builder().build();
-        Camera camera = cameraProvider.bindToLifecycle((LifecycleOwner) this,
-                CameraSelector.DEFAULT_BACK_CAMERA, imageCapture);
+            CameraSelector cameraSelector = new CameraSelector.Builder()
+                    .requireLensFacing(CameraSelector.LENS_FACING_BACK).build();
 
+            Camera camera = cameraProvider.bindToLifecycle(
+                    (LifecycleOwner) this,
+                    cameraSelector,
+                    preview,
+                    imageCapture
+            );
 
-        ImageCapture.OutputFileOptions outputFileOptions =
-                new ImageCapture.OutputFileOptions.Builder(photoFile).build();
-        imageCapture.takePicture(outputFileOptions, Executors.newSingleThreadExecutor(),
-                new ImageCapture.OnImageSavedCallback() {
-                    @Override
-                    public void onImageSaved(ImageCapture.OutputFileResults outputFileResults) {
-                        runOnUiThread(() -> Toast.makeText(getApplicationContext(), "Image saved successfully", Toast.LENGTH_SHORT).show());
-                        Log.d("CAM", "saved image: "+photoFile.getAbsolutePath());
+            ImageCapture.OutputFileOptions outputFileOptions =
+                    new ImageCapture.OutputFileOptions.Builder(photoFile).build();
+            imageCapture.takePicture(outputFileOptions, Executors.newSingleThreadExecutor(),
+                    new ImageCapture.OnImageSavedCallback() {
+                        @Override
+                        public void onImageSaved(ImageCapture.OutputFileResults outputFileResults) {
+                            runOnUiThread(() -> Toast.makeText(getApplicationContext(), "Image saved successfully", Toast.LENGTH_SHORT).show());
+                            Log.d("CAM", "saved image: " + photoFile.getAbsolutePath());
+                        }
+
+                        @Override
+                        public void onError(ImageCaptureException error) {
+                            error.printStackTrace();
+                            runOnUiThread(() -> Toast.makeText(getApplicationContext(), "Error saving image", Toast.LENGTH_SHORT).show());
+                        }
                     }
-                    @Override
-                    public void onError(ImageCaptureException error) {
-                        error.printStackTrace();
-                        runOnUiThread(() -> Toast.makeText(getApplicationContext(), "Error saving image", Toast.LENGTH_SHORT).show());
-                    }
-                }
-        );
+            );
 
+        } catch (ExecutionException | InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     private void bindImageAnalysis(@NonNull ProcessCameraProvider cameraProvider) {
